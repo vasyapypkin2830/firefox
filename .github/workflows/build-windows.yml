@@ -1,5 +1,20 @@
-name: Build BlackCat (Windows Artifact Build)
+ - name: Download IceCat Branding Icons
+      shell: bash
+      run: |
+        echo "=== Скачиваем официальные иконки IceCat для теста ==="
+        # Создаем временную папку и вытягиваем туда ресурсы брендинга IceCat
+        mkdir -p icecat-icons
+        curl -L https://gnu.org -o icecat-icons/firefox.ico
+        curl -L https://gnu.org -o icecat-icons/default16.png
+        curl -L https://gnu.org -o icecat-icons/default32.png
+        curl -L https://gnu.org -o icecat-icons/default64.png
+        curl -L https://gnu.org -o icecat-icons/default128.png
 
+        echo "=== Заменяем оригинальные иконки Firefox на тестовые иконки IceCat ==="
+        cp -f icecat-icons/* browser/branding/official/
+        
+        
+name: Build BlackCat (Windows Artifact Build)
 on:
   push:
     branches: [ master, main ]
