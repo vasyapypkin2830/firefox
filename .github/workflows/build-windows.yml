@@ -1,0 +1,47 @@
+name: Build BlackCat (Windows Artifact Build)
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch: # Позволит вам запускать сборку вручную кнопкой с телефона
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Mozilla Build Tools Dependencies
+      run: |
+        choco install mach -y
+
+    - name: Configure Artifact Build
+      run: |
+        # Создаем конфигурационный файл для быстрой сборки без компиляции C++ кода
+        echo "ac_add_options --enable-artifact-builds" > mozconfig
+        echo "ac_add_options --with-branding=browser/branding/official" >> mozconfig
+
+    - name: Bootstrap and Build
+      shell: bash
+      run: |
+        # Запуск внутренней утилиты mach для подготовки окружения и сборки
+        ./mach bootstrap --application-choice="Firefox for Desktop Artifact Build" --no-interactive
+        ./mach build
+
+    - name: Package Installer
+      shell: bash
+      run: |
+        ./mach package
+
+    - name: Upload Installer Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: BlackCat-Windows-Installer
+        path: objdir-frontend/dist/install/sea/*.exe
