@@ -1,9 +1,9 @@
-name: Build BlackCat (IceCat Test Build)
+name: Build BlackCat (Fixed IceCat Test)
 
 on:
   push:
     branches: [ master, main ]
-  workflow_dispatch: # Позволяет запускать сборку кнопкой с телефона
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,18 +18,21 @@ jobs:
       with:
         python-version: '3.11'
 
+    # Исправление: Гарантируем наличие необходимых инструментов сборки Mozilla в Windows
+    - name: Install MozillaBuild Tools via Chocolatey
+      run: |
+        choco install mozillabuild -y --no-progress
+        echo "C:\mozilla-build" >> $GITHUB_PATH
+
     - name: Download IceCat Branding Icons
       shell: bash
       run: |
         echo "=== Скачиваем официальные иконки IceCat для теста ==="
         mkdir -p icecat-icons
-        # Скачиваем оригинальный пакет иконок ледяного кота из репозитория GNUzilla
         curl -L "https://gnu.org" -o icecat-icons/firefox.ico
         curl -L "https://gnu.org" -o icecat-icons/default16.png
         curl -L "https://gnu.org" -o icecat-icons/default32.png
         curl -L "https://gnu.org" -o icecat-icons/default64.png
-        
-        echo "=== Переносим скачанные иконки в структуру сборки Firefox ==="
         cp -f icecat-icons/* browser/branding/official/
 
     - name: Configure Artifact Build
@@ -37,16 +40,14 @@ jobs:
         echo "ac_add_options --enable-artifact-builds" > mozconfig
         echo "ac_add_options --with-branding=browser/branding/official" >> mozconfig
 
+    # Исправление: Запуск через официальную консоль MozillaBuild (start-shell.bat)
     - name: Bootstrap and Build
-      shell: bash
       run: |
-        ./mach bootstrap --application-choice="Firefox for Desktop Artifact Build" --no-interactive
-        ./mach build
+        C:\mozilla-build\start-shell.bat "./mach bootstrap --application-choice='Firefox for Desktop Artifact Build' --no-interactive && ./mach build"
 
     - name: Package Installer
-      shell: bash
       run: |
-        ./mach package
+        C:\mozilla-build\start-shell.bat "./mach package"
 
     - name: Upload Installer Artifact
       uses: actions/upload-artifact@v4
