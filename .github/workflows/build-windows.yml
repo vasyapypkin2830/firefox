@@ -1,24 +1,9 @@
- - name: Download IceCat Branding Icons
-      shell: bash
-      run: |
-        echo "=== Скачиваем официальные иконки IceCat для теста ==="
-        # Создаем временную папку и вытягиваем туда ресурсы брендинга IceCat
-        mkdir -p icecat-icons
-        curl -L https://gnu.org -o icecat-icons/firefox.ico
-        curl -L https://gnu.org -o icecat-icons/default16.png
-        curl -L https://gnu.org -o icecat-icons/default32.png
-        curl -L https://gnu.org -o icecat-icons/default64.png
-        curl -L https://gnu.org -o icecat-icons/default128.png
+name: Build BlackCat (IceCat Test Build)
 
-        echo "=== Заменяем оригинальные иконки Firefox на тестовые иконки IceCat ==="
-        cp -f icecat-icons/* browser/branding/official/
-        
-        
-name: Build BlackCat (Windows Artifact Build)
 on:
   push:
     branches: [ master, main ]
-  workflow_dispatch: # Позволит вам запускать сборку вручную кнопкой с телефона
+  workflow_dispatch: # Позволяет запускать сборку кнопкой с телефона
 
 jobs:
   build:
@@ -33,20 +18,28 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Mozilla Build Tools Dependencies
+    - name: Download IceCat Branding Icons
+      shell: bash
       run: |
-        choco install mach -y
+        echo "=== Скачиваем официальные иконки IceCat для теста ==="
+        mkdir -p icecat-icons
+        # Скачиваем оригинальный пакет иконок ледяного кота из репозитория GNUzilla
+        curl -L "https://gnu.org" -o icecat-icons/firefox.ico
+        curl -L "https://gnu.org" -o icecat-icons/default16.png
+        curl -L "https://gnu.org" -o icecat-icons/default32.png
+        curl -L "https://gnu.org" -o icecat-icons/default64.png
+        
+        echo "=== Переносим скачанные иконки в структуру сборки Firefox ==="
+        cp -f icecat-icons/* browser/branding/official/
 
     - name: Configure Artifact Build
       run: |
-        # Создаем конфигурационный файл для быстрой сборки без компиляции C++ кода
         echo "ac_add_options --enable-artifact-builds" > mozconfig
         echo "ac_add_options --with-branding=browser/branding/official" >> mozconfig
 
     - name: Bootstrap and Build
       shell: bash
       run: |
-        # Запуск внутренней утилиты mach для подготовки окружения и сборки
         ./mach bootstrap --application-choice="Firefox for Desktop Artifact Build" --no-interactive
         ./mach build
 
@@ -58,5 +51,5 @@ jobs:
     - name: Upload Installer Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: BlackCat-Windows-Installer
+        name: IceCat-Test-Windows-Installer
         path: objdir-frontend/dist/install/sea/*.exe
